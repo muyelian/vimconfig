@@ -71,7 +71,7 @@ set fileformat=unix                                         " 设置新文件换
 set fileformats=unix,dos,mac                                " 设置支持文件的换行符格式
 set termencoding=utf-8                                      " Vim在与屏幕/键盘交互时使用的编码(取决于实际的终端的设定)
 set langmenu=zh_CN.utf-8                                    " 菜单语言
-language messages zh_cn.utf-8
+language messages zh_CN.UTF-8
 
 set guifont=YaHei\ Consolas\ Hybrid:h12                     " 字体
 
@@ -79,7 +79,7 @@ syntax on                                                   " 语法高亮
 
 filetype on                                                 " 启用文件类型侦测
 filetype plugin on                                          " 针对不同的文件类型加载对应的插件
-filetype plugin indent on                                   " 启用缩进
+"filetype plugin indent on                                   " 启用缩进
 
 set history=8                                               " 设置冒号命令和搜索命令的命令历史列表的长度
 
@@ -148,17 +148,12 @@ imap <c-j> <Down>                                           " Ctrl + J 插入模
 imap <c-h> <Left>                                           " Ctrl + H 插入模式下光标向左移动
 imap <c-l> <Right>                                          " Ctrl + L 插入模式下光标向右移动
 
-" 每行超过80个的字符用下划线标示
-au BufWinEnter * let w:m2=matchadd('Underlined', '\%>' . 80 . 'v.\+', -1)
+" 每行超过88个的字符用下划线标示
+au BufWinEnter * let w:m2=matchadd('Underlined', '\%>' . 88 . 'v.\+', -1)
 
 au BufRead,BufNewFile,BufEnter * cd %:p:h                   " 自动切换目录为当前编辑文件所在目录
 
-colorscheme evening                                         " 配色方案
-hi Normal ctermfg=grey ctermbg=black
-hi Visual ctermfg=green ctermbg=black
-hi Search term=reverse cterm=standout ctermfg=green  ctermbg=yellow
-hi IncSearch term=reverse cterm=standout ctermfg=green ctermbg=yellow
-hi PmenuSel ctermbg=Green ctermfg=Yellow
+colorscheme lucius                                          " 配色方案
 
 " 显示/隐藏菜单栏、工具栏、滚动条，可用 F11 切换
 set guioptions-=m
@@ -370,7 +365,7 @@ inoremap <BS> <ESC>:call RemovePairs()<CR>a
 function RemoveNextDoubleChar(char)
     let l:line = getline(".")
     let l:next_char = l:line[col(".")] " 取得当前光标后一个字符
- 
+
     if a:char == l:next_char
         silent execute "normal! l"
     else
@@ -381,20 +376,20 @@ endfunction
 function RemovePairs()
     let l:line = getline(".")
     let l:previous_char = l:line[col(".")-1] " 取得当前光标前一个字符
- 
+
     if index(["(", "[", "{"], l:previous_char) == -1
         silent execute "normal! a\<BS>"
     else
         let l:original_pos = getpos(".")
         silent execute "normal %"
         let l:new_pos = getpos(".")
- 
+
         " 如果没有匹配的右括号
         if l:original_pos == l:new_pos
             silent execute "normal! a\<BS>"
             return
         end
- 
+
         let l:line2 = getline(".")
         if len(l:line2) == col(".")
             " 如果右括号是当前行最后一个字符
@@ -404,6 +399,71 @@ function RemovePairs()
             silent execute "normal! v%xi"
         end
     end
+endfunction
+
+" -----------------------------------------------------------------------------
+"  < 添加C/C++文件头描述信息 >
+" -----------------------------------------------------------------------------
+" F4
+map <F4> :call TitleDescription()<cr>'s
+function AddTitle()
+  call append(0, "/*")
+  call append(1, " * Copyright (c) ".strftime("%Y")." kom. All rights reserved.")
+  call append(2, " *")
+  call append(3, " * Redistribution and use in source and binary forms, with or without")
+  call append(4, " * modification, are permitted provided that the following conditions")
+  call append(5, " * are met:")
+  call append(6, " *")
+  call append(7, " *  * Redistributions of source code must retain the above copyright")
+  call append(8, " *    notice, this list ofconditions and the following disclaimer.")
+  call append(9, " *")
+  call append(10," *  * Redistributions in binary form must reproduce the above copyright")
+  call append(11," *    notice, this list of conditions and the following disclaimer in")
+  call append(12," *    the documentation and/or other materialsprovided with the")
+  call append(13," *    distribution.")
+  call append(14," *")
+  call append(15," * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS")
+  call append(16," * \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT")
+  call append(17," * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS")
+  call append(18," * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE")
+  call append(19," * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,")
+  call append(20," * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,")
+  call append(21," * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;")
+  call append(22," * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER")
+  call append(23," * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT")
+  call append(24," * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN")
+  call append(25," * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE")
+  call append(26," * POSSIBILITY OF SUCH DAMAGE.")
+  call append(27," */")
+  echohl WarningMsg | echo "Successful in adding the copyright." | echohl None
+endfunction
+
+" 更新最近修改时间和文件名
+function UpdateTitle()
+  normal m'
+  execute '/# *Last modified:/s@:.*$@\=strftime(":\t%Y-%m-%d %H:%M")@'
+  normal ''
+  normal mk
+  execute '/# *Filename:/s@:.*$@\=":\t\t".expand("%:t")@'
+  execute "noh"
+  normal 'k
+  echohl WarningMsg | echo "Successful in updating the copy right." | echohl None
+endfunction
+
+" 判断前10行代码里面, 是否有Copyright这个单词，
+" 如果没有的话, 代表没有添加过作者信息, 需要新添加: 如果有的话, 那么只需要更新即可
+function TitleDescription()
+  let n=1
+  " 默认为添加
+  while n < 10
+    let line = getline(n)
+      if line =~ '^\#\s*\S*Copyright:\S*.*$'
+        call UpdateTitle()
+        return
+      endif
+      let n = n + 1
+  endwhile
+  call AddTitle()
 endfunction
 
 
