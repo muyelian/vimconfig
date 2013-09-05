@@ -153,7 +153,13 @@ au BufWinEnter * let w:m2=matchadd('Underlined', '\%>' . 88 . 'v.\+', -1)
 
 au BufRead,BufNewFile,BufEnter * cd %:p:h                   " 自动切换目录为当前编辑文件所在目录
 
-colorscheme lucius                                          " 配色方案
+" 配色方案
+if g:isGUI
+  colorscheme lucius
+else
+  set t_Co=256
+  colorscheme zenburn
+endif
 
 " 显示/隐藏菜单栏、工具栏、滚动条，可用 F11 切换
 set guioptions-=m
