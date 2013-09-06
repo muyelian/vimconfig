@@ -28,7 +28,6 @@ endif
 "  < Windows Gvim 默认配置> 做了一点修改
 " -----------------------------------------------------------------------------
 if (g:iswindows && g:isGUI)
-
     " 退格键
     set backspace=indent,eol,start whichwrap+=<,>,[,]
     vnoremap <BS> d
@@ -98,8 +97,9 @@ set cindent                                                 " 使用C样式的�
 set autoindent                                              " 继承前一行的缩进方式，特别适用于多行注释
 set smartindent                                             " 智能缩进
 set smarttab                                                " 指定按一次backspace就删除shiftwidth宽度的空格
-set nofoldenable                                              " 启用折叠
-set foldmethod=indent                                       " indent 折叠方式
+set nofoldenable                                            " 启用折叠
+set foldmethod=syntax                                       " syntax 折叠方式
+set foldlevel=1                                             " 设置折叠层数
 " 用空格键来开关折叠
 nnoremap <space> @=((foldclosed(line('.')) < 0) ? 'zc' : 'zo')<CR>
 
@@ -125,14 +125,14 @@ set cursorline                                              " 突出显示当前
 "set cursorcolumn                                            " 突出显示当前列
 
 set shortmess=atI                                           " 去掉欢迎界面
-
-au GUIEnter * simalt ~x                                     " 窗口启动时自动最大化
-
 set mouse=nv                                                " normal和Visual启动鼠标
 
 autocmd FileType perl set keywordprg=perldoc\ -f            " Perl帮助
+autocmd GUIEnter * simalt ~x                                " 窗口启动时自动最大化
 
-set vb t_vb=                                                " 关闭响铃
+set noerrorbells                                            " 关闭错误信息响铃
+set novisualbell                                            " 关闭使用可视响铃代替呼叫
+set vb t_vb=                                                " 置空错误铃声的终端代码
 
 " 定义mapleader
 let mapleader = ","
@@ -149,9 +149,9 @@ imap <c-h> <Left>                                           " Ctrl + H 插入模
 imap <c-l> <Right>                                          " Ctrl + L 插入模式下光标向右移动
 
 " 每行超过88个的字符用下划线标示
-au BufWinEnter * let w:m2=matchadd('Underlined', '\%>' . 88 . 'v.\+', -1)
+autocmd BufWinEnter * let w:m2=matchadd('Underlined', '\%>' . 88 . 'v.\+', -1)
 
-au BufRead,BufNewFile,BufEnter * cd %:p:h                   " 自动切换目录为当前编辑文件所在目录
+autocmd BufRead,BufNewFile,BufEnter * cd %:p:h              " 自动切换目录为当前编辑文件所在目录
 
 " 配色方案
 if g:isGUI
@@ -411,65 +411,37 @@ endfunction
 "  < 添加C/C++文件头描述信息 >
 " -----------------------------------------------------------------------------
 " F4
-map <F4> :call TitleDescription()<cr>'s
+map <F4> :call AddTitle()<cr>'s
 function AddTitle()
   call append(0, "/*")
-  call append(1, " * Copyright (c) ".strftime("%Y")." kom. All rights reserved.")
-  call append(2, " *")
-  call append(3, " * Redistribution and use in source and binary forms, with or without")
-  call append(4, " * modification, are permitted provided that the following conditions")
-  call append(5, " * are met:")
-  call append(6, " *")
-  call append(7, " *  * Redistributions of source code must retain the above copyright")
-  call append(8, " *    notice, this list ofconditions and the following disclaimer.")
-  call append(9, " *")
-  call append(10," *  * Redistributions in binary form must reproduce the above copyright")
-  call append(11," *    notice, this list of conditions and the following disclaimer in")
-  call append(12," *    the documentation and/or other materialsprovided with the")
-  call append(13," *    distribution.")
-  call append(14," *")
-  call append(15," * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS")
-  call append(16," * \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT")
-  call append(17," * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS")
-  call append(18," * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE")
-  call append(19," * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,")
-  call append(20," * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,")
-  call append(21," * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;")
-  call append(22," * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER")
-  call append(23," * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT")
-  call append(24," * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN")
-  call append(25," * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE")
-  call append(26," * POSSIBILITY OF SUCH DAMAGE.")
-  call append(27," */")
-  echohl WarningMsg | echo "Successful in adding the copyright." | echohl None
-endfunction
-
-" 更新最近修改时间和文件名
-function UpdateTitle()
-  normal m'
-  execute '/# *Last modified:/s@:.*$@\=strftime(":\t%Y-%m-%d %H:%M")@'
-  normal ''
-  normal mk
-  execute '/# *Filename:/s@:.*$@\=":\t\t".expand("%:t")@'
-  execute "noh"
-  normal 'k
-  echohl WarningMsg | echo "Successful in updating the copy right." | echohl None
-endfunction
-
-" 判断前10行代码里面, 是否有Copyright这个单词，
-" 如果没有的话, 代表没有添加过作者信息, 需要新添加: 如果有的话, 那么只需要更新即可
-function TitleDescription()
-  let n=1
-  " 默认为添加
-  while n < 10
-    let line = getline(n)
-      if line =~ '^\#\s*\S*Copyright:\S*.*$'
-        call UpdateTitle()
-        return
-      endif
-      let n = n + 1
-  endwhile
-  call AddTitle()
+  call append(1, " * Copyright (c) ".strftime("%Y")." Kiba Amor <KibaAmor@gmail.com>")
+  call append(2, " * All rights reserved.")
+  call append(3, " *")
+  call append(4, " * Redistribution and use in source and binary forms, with or without")
+  call append(5, " * modification, are permitted provided that the following conditions")
+  call append(6, " * are met:")
+  call append(7, " *")
+  call append(8, " *  * Redistributions of source code must retain the above copyright")
+  call append(9, " *    notice, this list ofconditions and the following disclaimer.")
+  call append(10," *")
+  call append(11," *  * Redistributions in binary form must reproduce the above copyright")
+  call append(12," *    notice, this list of conditions and the following disclaimer in")
+  call append(13," *    the documentation and/or other materialsprovided with the")
+  call append(14," *    distribution.")
+  call append(15," *")
+  call append(16," * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS")
+  call append(17," * \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT")
+  call append(18," * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS")
+  call append(19," * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE")
+  call append(20," * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,")
+  call append(21," * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,")
+  call append(22," * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;")
+  call append(23," * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER")
+  call append(24," * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT")
+  call append(25," * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN")
+  call append(26," * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE")
+  call append(27," * POSSIBILITY OF SUCH DAMAGE.")
+  call append(28," */")
 endfunction
 
 
@@ -529,3 +501,42 @@ autocmd BufReadPost *.cpp,*.c,*.h,*.hpp,*.cc,*.cxx call tagbar#autoopen()
 " <Leader>ca 在/*...*/与//这两种注释方式中切换（其它语言可能不一样了）
 " <Leader>cA 行尾注释
 let NERDSpaceDelims = 1                     "在左注释符之后，右注释符之前留有空格
+
+" -----------------------------------------------------------------------------
+"  < vimtweak 工具配置 >
+" -----------------------------------------------------------------------------
+" 这里只用于窗口透明与置顶
+" 常规模式下 Shift + k 减小透明度，Shift + j 增加透明度，Shift + t 窗口置顶与否切换
+if (g:iswindows && g:isGUI)
+    let g:Current_Alpha = 230
+    let g:Top_Most = 0
+    function Alpha_add()
+        let g:Current_Alpha = g:Current_Alpha + 10
+        if g:Current_Alpha > 255
+            let g:Current_Alpha = 255
+        endif
+        call libcallnr("vimtweak.dll", "SetAlpha", g:Current_Alpha)
+    endfunction
+    function Alpha_sub()
+        let g:Current_Alpha = g:Current_Alpha - 10
+        if g:Current_Alpha < 155
+            let g:Current_Alpha = 155
+        endif
+        call libcallnr("vimtweak.dll", "SetAlpha", g:Current_Alpha)
+    endfunction
+    function Top_window()
+        if  g:Top_Most == 0
+            call libcallnr("vimtweak.dll", "EnableTopMost", 1)
+            let g:Top_Most = 1
+        else
+            call libcallnr("vimtweak.dll", "EnableTopMost", 0)
+            let g:Top_Most = 0
+        endif
+    endfunction
+    "快捷键设置
+    map <s-k> :call Alpha_add()<cr>
+    map <s-j> :call Alpha_sub()<cr>
+    map <s-t> :call Top_window()<cr>
+    " 设置透明度
+    autocmd GUIEnter * call libcallnr("vimtweak.dll", "SetAlpha", g:Current_Alpha)
+endif
